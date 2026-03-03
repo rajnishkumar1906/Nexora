@@ -1,44 +1,67 @@
-import React from "react";
+import { getInitials } from '../../utils/helpers'
 
-const Avatar = ({ src, fallback, size = "md", className = "" }) => {
-  const [error, setError] = React.useState(false);
+const Avatar = ({
+  src,
+  alt,
+  name,
+  size = 'md',
+  status,
+  className = '',
+}) => {
+  const sizes = {
+    xs: 'w-6 h-6 text-xs',
+    sm: 'w-8 h-8 text-sm',
+    md: 'w-10 h-10 text-base',
+    lg: 'w-12 h-12 text-lg',
+    xl: 'w-16 h-16 text-xl',
+  }
 
-  const sizeClasses = {
-    sm: "w-8 h-8 text-xs",
-    md: "w-10 h-10 text-sm",
-    lg: "w-12 h-12 text-base",
-    xl: "w-16 h-16 text-lg",
-    full: "w-full h-full"
-  };
+  const statusColors = {
+    online: 'bg-green-500',
+    offline: 'bg-gray-400',
+    away: 'bg-yellow-500',
+    busy: 'bg-red-500',
+  }
 
-  const getInitials = () => {
-    if (!fallback) return "?";
-    return fallback.charAt(0).toUpperCase();
-  };
+  const statusSizes = {
+    xs: 'w-1.5 h-1.5',
+    sm: 'w-2 h-2',
+    md: 'w-2.5 h-2.5',
+    lg: 'w-3 h-3',
+    xl: 'w-3.5 h-3.5',
+  }
 
   return (
-    <div
-      className={`
-        ${sizeClasses[size] || sizeClasses.md}
-        rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700
-        flex items-center justify-center font-semibold
-        ${className}
-      `}
-    >
-      {src && !error ? (
+    <div className="relative inline-block">
+      {src ? (
         <img
           src={src}
-          alt={fallback}
-          className="w-full h-full object-cover"
-          onError={() => setError(true)}
+          alt={alt || name}
+          className={`${sizes[size]} rounded-full object-cover ${className}`}
         />
       ) : (
-        <span className="text-gray-600 dark:text-gray-300">
-          {getInitials()}
-        </span>
+        <div
+          className={`
+            ${sizes[size]} rounded-full bg-blue-500 text-white
+            flex items-center justify-center font-medium
+            ${className}
+          `}
+        >
+          {getInitials(name || 'U')}
+        </div>
+      )}
+      
+      {status && (
+        <span
+          className={`
+            absolute bottom-0 right-0 block rounded-full ring-2 ring-white
+            ${statusColors[status]}
+            ${statusSizes[size]}
+          `}
+        />
       )}
     </div>
-  );
-};
+  )
+}
 
-export default Avatar;
+export default Avatar

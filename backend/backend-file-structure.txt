@@ -1,0 +1,78 @@
+backend/
+│
+├── 📂 authentication/                      # Authentication Service
+│   ├── auth.controller.js                  # Handles signup, login, logout, getMe logic
+│   ├── auth.routes.js                      # Routes for auth endpoints (/signup, /login, etc.)
+│   ├── auth.middleware.js                  # JWT verification middleware for protected routes
+│   └── index.js                            # Service exporter - combines routes
+│
+├── 📂 user-profile/                         # User Profile Service
+│   ├── profile.controller.js                # Handles user/profile CRUD operations
+│   ├── profile.routes.js                    # Routes for profile endpoints
+│   ├── user.model.js                         # User schema (username, email, password, status, friends)
+│   ├── profile.model.js                      # Profile schema (avatar, cover, bio, location)
+│   └── index.js                              # Service exporter
+│
+├── 📂 friends/                               # Friends Service
+│   ├── friend.controller.js                  # Handles friend requests (send/accept/reject)
+│   ├── friend.routes.js                      # Routes for friend endpoints
+│   ├── friend-request.model.js               # Friend request schema (sender, recipient, status)
+│   └── index.js                              # Service exporter
+│
+├── 📂 servers/                               # Servers/Communities Service
+│   ├── server.controller.js                  # Handles server CRUD (create, join, leave, etc.)
+│   ├── server.routes.js                      # Routes for server endpoints
+│   ├── server.model.js                        # Server schema (name, description, owner, inviteCode)
+│   ├── server-member.model.js                 # Server membership schema (user, server, role)
+│   └── index.js                              # Service exporter
+│
+├── 📂 channels/                              # Channels Service
+│   ├── channel.controller.js                  # Handles channel CRUD and messages
+│   ├── channel.routes.js                      # Routes for channel endpoints
+│   ├── channel.model.js                        # Channel schema (name, type, server reference)
+│   ├── channel-message.model.js                # Channel message schema (text, sender, channel)
+│   └── index.js                              # Service exporter
+│
+├── 📂 dm-chat/                               # Direct Message Service
+│   ├── chat.controller.js                     # Handles DM chat history and sending
+│   ├── chat.routes.js                         # Routes for DM endpoints
+│   ├── chat-room.model.js                      # Chat room schema (users, messages, chatId)
+│   └── index.js                              # Service exporter
+│
+├── 📂 games/                                 # Games Service
+│   ├── game.controller.js                     # Handles game logic (start, join, move, rematch)
+│   ├── game.routes.js                         # Routes for game endpoints
+│   ├── game-session.model.js                   # Game session schema (board, players, status)
+│   └── index.js                              # Service exporter
+│
+├── 📂 notifications/                         # Notifications Service
+│   ├── notification.controller.js              # Handles notification CRUD
+│   ├── notification.routes.js                  # Routes for notification endpoints
+│   ├── notification.model.js                    # Notification schema (user, sender, type, message)
+│   └── index.js                               # Service exporter
+│
+├── 📂 real-time/                             # Real-time Socket Service
+│   ├── chat.socket.js                         # Handles real-time DM events
+│   ├── channel.socket.js                       # Handles real-time channel events
+│   ├── game.socket.js                          # Handles real-time game events
+│   └── index.js                               # Socket initializer and exporter
+│
+├── 📂 utils/                                 # Shared Utilities
+│   ├── cloudinary.js                          # Cloudinary upload helper functions
+│   ├── helpers.js                             # General helper functions (generate invite code, etc.)
+│   ├── constants.js                            # Application constants (enums, status codes)
+│   ├── validators.js                           # Input validation functions
+│   └── index.js                               # Utils exporter
+│
+├── 📂 config/                                # Configuration Files
+│   ├── db.js                                  # MongoDB connection setup
+│   ├── cloud_config.js                         # Cloudinary configuration
+│   └── index.js                               # Config exporter
+│
+├── 📂 temp/                                   # Temporary Upload Folder
+│   └── (auto-generated upload files)          # Files uploaded before Cloudinary processing
+│
+├── .env                                       # Environment variables
+├── package.json                               # Dependencies and scripts
+├── package-lock.json                          # Locked dependency versions
+└── server.js                                  # Main entry point - orchestrates all services
