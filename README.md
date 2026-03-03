@@ -1,6 +1,4 @@
-## 📝 **Updated README.md for Nexora with Current Backend Structure**
 
-```markdown
 # 🌐 Nexora
 
 **Nexora** is a modern full-stack **Discord-style community platform** built with the **MERN stack**.  
