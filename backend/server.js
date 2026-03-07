@@ -129,7 +129,7 @@ if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../frontend/dist')));
 
   // Any route that is not an API route will be handled by the frontend
-  app.get('*', (req, res) => {
+  app.get('(.*)', (req, res) => {
     // Only handle routes that are not API routes
     if (!req.path.startsWith('/api')) {
       res.sendFile(path.resolve(__dirname, '../frontend', 'dist', 'index.html'));
@@ -147,7 +147,7 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // 404 handler for API routes
-app.use('/api/:splat*', (req, res) => {
+app.use('/api', (req, res) => {
   res.status(404).json({
     success: false,
     message: `API Route not found: ${req.method} ${req.originalUrl}`
