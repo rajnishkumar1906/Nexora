@@ -1,12 +1,22 @@
+// dm-chat/chat.routes.js
 import express from 'express';
-import { getChatList, getChatMessages, sendMessage } from './chat.controller.js';
-import { authMiddleware } from '../authentication/auth.middleware.js';
+import { 
+  getDMInbox, 
+  deleteMessage, 
+  clearChatHistory, 
+  deleteChatRoom 
+} from './chat.controller.js';
+import { protect } from '../middleware/middleware.js';
 
 const router = express.Router();
 
-router.use(authMiddleware);
-router.get('/list', getChatList);
-router.get('/:chatId', getChatMessages);
-router.post('/send', sendMessage);
+// Apply protection to all DM chat routes
+router.use(protect);
+
+// Management & Structural Routes
+router.get('/rooms', getDMInbox);
+router.delete('/messages/:messageId', deleteMessage);
+router.delete('/room/:roomId/clear', clearChatHistory);
+router.delete('/room/:roomId', deleteChatRoom);
 
 export default router;

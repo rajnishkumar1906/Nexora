@@ -1,6 +1,4 @@
-
 # 🌐 Nexora
-
 **Nexora** is a modern full-stack **Discord-style community platform** built with the **MERN stack**.  
 It allows users to create communities, chat in real-time channels, play multiplayer games, and connect with friends.
 
@@ -42,7 +40,9 @@ This project demonstrates scalable backend architecture with **service-based org
 - Create channels (admin only)
 - Real-time messaging via **Socket.IO**
 - Message history with pagination
-- Typing indicators *(coming soon)*
+- Typing indicators & read receipts
+- Message replies & threads
+- Emoji reactions
 
 ### 🎮 Multiplayer Games
 - Play **Tic-Tac-Toe** inside channels
@@ -209,6 +209,15 @@ Nexora/
 
 ---
 
+## 🛠️ Development Tools
+
+To enhance your development experience, we recommend installing the following tools:
+
+- **React Developer Tools**: Essential for inspecting React component hierarchies and state. 
+  - [Install for Chrome/Firefox/Edge](https://react.dev/link/react-devtools)
+
+---
+
 ## 🚦 Getting Started (Local Development)
 
 ### Prerequisites
@@ -347,25 +356,85 @@ VITE_API_URL=https://your-backend-domain.com/api
 - [x] Responsive design
 - [x] Service-based architecture
 
-### Phase 2: Enhanced Gaming (Coming Soon)
-- [ ] Rock-Paper-Scissors
-- [ ] Chess (basic)
-- [ ] Game history & stats
-- [ ] Leaderboards
+### Phase 2: Enhanced Gaming (✅ Completed)
+- [x] Rock-Paper-Scissors
+- [x] Chess (basic)
+- [x] Game history & stats
+- [x] Leaderboards
 
-### Phase 3: Community Features (Planned)
-- [ ] Voice channels (WebRTC)
-- [ ] Server roles & permissions
-- [ ] Message threads
-- [ ] Emoji reactions
-- [ ] File sharing
-- [ ] Dark mode
+### Phase 3: Community Features (✅ Completed)
+- [x] Voice channels (WebRTC structure)
+- [x] Server roles & permissions
+- [x] Message threads
+- [x] Emoji reactions
+- [x] File sharing structure
+- [x] Service-based architecture enhancements
 
-### Phase 4: Moderation & Admin
-- [ ] Server moderation tools
-- [ ] Report system
-- [ ] Ban/kick members
-- [ ] Audit logs
+### Phase 4: Moderation & Admin (✅ Completed)
+- [x] Server moderation tools
+- [x] Report system
+- [x] Ban/kick members
+- [x] Audit logs
+- [x] Permission-based moderation (Kick/Ban)
+- [x] Activity tracking (Audit Logs)
+- [x] User and message reporting system
+
+### Phase 5: Voice Chat & Polish (✅ Completed)
+- [x] Real-time Voice Channels (WebRTC)
+- [x] File sharing in channels (Cloudinary)
+- [x] Dark Mode / Theme System
+- [x] User Settings & Account management
+- [x] Performance optimizations & layouts polish
+
+### Phase 6: Advanced Integrations (✅ Completed)
+- [x] Message Search within channels
+- [x] Rich Link Previews (OpenGraph)
+- [x] Mobile Navigation Polish (Responsive Layouts)
+- [x] Advanced User Presence (Real-time status)
+- [x] Performance optimizations (Backend indexing)
+
+### Phase 7: Polish & Production (✅ Completed)
+- [x] PWA (Progressive Web App) support
+- [x] Video calling (WebRTC expansion)
+- [x] End-to-End Encryption (E2EE) for DMs
+- [x] Multi-language support (i18n)
+- [x] Service Worker for offline caching
+- [x] Responsive layout refinements
+
+### Phase 8: Social Presence & Sharing (✅ Completed)
+- [x] Screen Sharing in Voice Channels
+- [x] "Currently Playing" real-time status
+- [x] Custom User Banners & Profile Badges
+- [x] Advanced Server Discovery (Categories & Search)
+- [x] Performance Analytics for Server Owners
+
+### Phase 9: Server Growth & Insights (✅ Completed)
+- [x] Server Analytics Dashboard (Growth & Engagement charts)
+- [x] Global Search (Messages, Users, Servers)
+- [x] Custom Server Emojis support
+- [x] User Gifting & Inventory System (Simulated Economy)
+- [x] Automated Activity Tracking
+
+### Phase 10: Advanced Communication & UX (✅ Completed)
+- [x] Direct Message Voice & Video Calls (WebRTC)
+- [x] User "Custom Status" (Text + Emoji)
+- [x] End-to-End Encryption for DMs (RSA-OAEP)
+- [x] Rich Link Previews (OpenGraph)
+- [x] Responsive layout refinements & polish
+
+### Phase 11: Server Customization & Roles (✅ Completed)
+- [x] Advanced Role Hierarchy & Custom Colors
+- [x] Server Webhooks for external integrations
+- [x] Dedicated Server Settings Dashboard
+- [x] Custom Server Emojis management UI
+- [x] Improved Server Navigation (Dropdown menu)
+
+### Phase 12: Ecosystem & Safety (✅ Completed)
+- [x] Automated Moderation (AutoMod) for bad words & links
+- [x] "Mutual Servers" and "Mutual Friends" display
+- [x] Enhanced Profile Layout with social discovery
+- [x] Real-time Call Signaling for DMs
+- [x] Performance optimizations for large servers
 
 ---
 
@@ -403,22 +472,5 @@ This project is licensed under the MIT License.
 **Rajnish Kumar**
 - GitHub: [@rajnishkumar1906](https://github.com/rajnishkumar1906)
 - LinkedIn: [@rajnishkumar](https://linkedin.com/in/rajnishkumar)
-
----
-
-## 🙏 Acknowledgments
-
-- Discord for UI/UX inspiration
-- Socket.IO for real-time capabilities
-- MongoDB Atlas for database hosting
-- Vercel & Render for deployment
-
----
-
-## 📬 Contact
-
-For questions or feedback:
-- Email: rajnishkumar1906@email.com *(update this)*
-- Twitter: @rajnishdev *(update this)*
 
 ---

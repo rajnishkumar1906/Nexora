@@ -26,9 +26,21 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
 
+# Project specific
 Revise_cloudinary_file_upload.txt
 Revise_multer.txt
 Revise_react_context.txt
 Revise_websocket.txt
 DISCORD-LIKE-ROADMAP.md
+
+# Socket test files
+socket
+websocket-community-real-time-connection
+websocket-notification-real-time-connection
+websocket-two-people-real-time-connection

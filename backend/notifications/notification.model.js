@@ -1,37 +1,53 @@
+// notifications/notification.model.js
 import mongoose from 'mongoose';
 
-const notificationSchema = new mongoose.Schema(
-  {
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
-    },
-    sender: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    type: {
-      type: String,
-      enum: [
-        'friend_request',
-        'friend_request_accepted',
-        'game_invite',
-        'game_turn',
-        'game_result',
-        'channel_mention',
-        'server_invite',
-        'message',
-      ],
-      required: true,
-    },
-    title: { type: String, required: true },
-    message: { type: String, required: true },
-    data: { type: mongoose.Schema.Types.Mixed, default: {} },
-    isRead: { type: Boolean, default: false },
-    isClicked: { type: Boolean, default: false },
-    actionUrl: { type: String, default: '' },
+const notificationSchema = new mongoose.Schema({
+  recipient: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
   },
-  { timestamps: true },
-);
+  sender: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
+  type: {
+    type: String,
+    enum: [
+      'friend_request', 
+      'friend_accept', 
+      'server_invite', 
+      'channel_mention', 
+      'game_invite', 
+      'new_message'
+    ],
+    required: true
+  },
+  content: {
+    type: String,
+    required: true
+  },
+  data: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
+  },
+  isRead: {
+    type: Boolean,
+    default: false
+  },
+  readAt: {
+    type: Date,
+    default: null
+  }
+}, {
+  timestamps: true
+});
 
-notificationSchema.index({ user: 1, isRead: 1, createdAt: -1 });
+// Index for user notifications
+notificationSchema.index({ recipient: 1, createdAt: -1 });
+notificationSchema.index({ recipient: 1, isRead: 1 });
 
-export default mongoose.model('Notification', notificationSchema);
+const Notification = mongoose.model('Notification', notificationSchema);
+
+export default Notification;

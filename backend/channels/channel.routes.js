@@ -1,18 +1,25 @@
+// channels/channel.routes.js
 import express from 'express';
-import {
-  getChannels,
-  createChannel,
-  getChannelMessages,
-  sendChannelMessage,
+import { 
+  createChannel, 
+  getServerChannels, 
+  getChannelById, 
+  updateChannel, 
+  deleteChannel, 
+  getChannelMessages 
 } from './channel.controller.js';
-import { authMiddleware } from '../authentication/auth.middleware.js';
+import { protect } from '../middleware/middleware.js';
 
 const router = express.Router();
 
-router.use(authMiddleware);
-router.get('/server/:serverId', getChannels);
-router.post('/server/:serverId', createChannel);
-router.get('/:channelId/messages', getChannelMessages);
-router.post('/:channelId/messages', sendChannelMessage);
+// Apply protection to all channel routes
+router.use(protect);
+
+router.post('/', createChannel);
+router.get('/server/:serverId', getServerChannels);
+router.get('/:id', getChannelById);
+router.put('/:id', updateChannel);
+router.delete('/:id', deleteChannel);
+router.get('/:id/messages', getChannelMessages);
 
 export default router;

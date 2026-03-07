@@ -1,26 +1,42 @@
+// servers/server-member.model.js
 import mongoose from 'mongoose';
 
-const serverMemberSchema = new mongoose.Schema(
-  {
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
-    },
-    server: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Server',
-      required: true,
-    },
-    role: {
-      type: String,
-      enum: ['owner', 'admin', 'member'],
-      default: 'member',
-    },
+const serverMemberSchema = new mongoose.Schema({
+  server: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Server',
+    required: true
   },
-  { timestamps: true },
-);
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  role: {
+    type: String,
+    enum: ['owner', 'admin', 'member'],
+    default: 'member'
+  },
+  nickname: {
+    type: String,
+    maxlength: [32, 'Nickname cannot exceed 32 characters'],
+    default: null
+  },
+  joinedAt: {
+    type: Date,
+    default: Date.now
+  }
+}, {
+  timestamps: true
+});
 
-serverMemberSchema.index({ user: 1, server: 1 }, { unique: true });
+// Ensure a user can only be in a server once
+serverMemberSchema.index({ server: 1, user: 1 }, { unique: true });
 
-export default mongoose.model('ServerMember', serverMemberSchema);
+// Index for common queries
+serverMemberSchema.index({ server: 1, role: 1 });
+serverMemberSchema.index({ user: 1 });
+
+const ServerMember = mongoose.model('ServerMember', serverMemberSchema);
+
+export default ServerMember;

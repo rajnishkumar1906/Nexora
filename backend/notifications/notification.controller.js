@@ -1,70 +1,140 @@
-// Notification Controller
+// Notification Logic
 import Notification from './notification.model.js';
 
-export const getNotifications = async (req, res) => {
+export const getMyNotifications = async (req, res) => {
   try {
-    res.json({ message: 'Get notifications endpoint' });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
+    const userId = req.user._id;
 
-export const getUnreadCount = async (req, res) => {
-  try {
-    res.json({ message: 'Get unread count endpoint' });
+    const notifications = await Notification.find({ recipient: userId })
+      .populate('sender', 'username profile.displayName profile.avatar')
+      .sort({ createdAt: -1 })
+      .limit(50);
+
+    const unreadCount = await Notification.countDocuments({
+      recipient: userId,
+      isRead: false
+    });
+
+    res.status(200).json({
+      success: true,
+      notifications,
+      unreadCount
+    });
+
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Get notifications error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get notifications'
+    });
   }
 };
 
 export const markAsRead = async (req, res) => {
   try {
-    res.json({ message: 'Mark as read endpoint' });
+    const { id } = req.params;
+
+    const notification = await Notification.findOneAndUpdate(
+      { _id: id, recipient: req.user._id },
+      { $set: { isRead: true, readAt: Date.now() } },
+      { new: true }
+    );
+
+    if (!notification) {
+      return res.status(404).json({
+        success: false,
+        message: 'Notification not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Notification marked as read'
+    });
+
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Mark as read error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to mark notification as read'
+    });
   }
 };
 
 export const markAllAsRead = async (req, res) => {
   try {
-    res.json({ message: 'Mark all as read endpoint' });
+    await Notification.updateMany(
+      { recipient: req.user._id, isRead: false },
+      { $set: { isRead: true, readAt: Date.now() } }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'All notifications marked as read'
+    });
+
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Mark all as read error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to mark all as read'
+    });
   }
 };
 
 export const deleteNotification = async (req, res) => {
   try {
-    res.json({ message: 'Delete notification endpoint' });
+    const { id } = req.params;
+
+    const notification = await Notification.findOneAndDelete({
+      _id: id,
+      recipient: req.user._id
+    });
+
+    if (!notification) {
+      return res.status(404).json({
+        success: false,
+        message: 'Notification not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Notification deleted'
+    });
+
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Delete notification error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete notification'
+    });
   }
 };
 
-export const deleteAllNotifications = async (req, res) => {
+export const createAndEmitNotification = async (app, data) => {
   try {
-    res.json({ message: 'Delete all notifications endpoint' });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
+    const { recipient, sender, type, content, extraData } = data;
 
-// Internal function to create notifications (used by other services)
-export const createNotification = async (data) => {
-  try {
-    const { user, sender, type, title, message, data: metaData, actionUrl } = data;
     const notification = await Notification.create({
-      user,
+      recipient,
       sender,
       type,
-      title,
-      message,
-      data: metaData || {},
-      actionUrl: actionUrl || '',
+      content,
+      data: extraData || {}
     });
+
+    const populatedNotification = await Notification.findById(notification._id)
+      .populate('sender', 'username profile.displayName profile.avatar');
+
+    const io = app.get('io');
+    if (io) {
+      io.to(recipient.toString()).emit('notification', populatedNotification);
+    }
+
     return notification;
   } catch (error) {
-    console.error('Create notification error:', error);
-    return null;
+    console.error('Create and emit notification error:', error);
+    throw error;
   }
 };
