@@ -2,7 +2,7 @@
 **Nexora** is a modern full-stack **Discord-style community platform** built with the **MERN stack**.  
 It allows users to create communities, chat in real-time channels, play multiplayer games, and connect with friends.
 
-Live Demo: [https://nexora.vercel.app/](https://nexora.vercel.app/)
+Live Demo: [https://nexora-teal.vercel.app/](https://nexora-teal.vercel.app/)
 
 ---
 
