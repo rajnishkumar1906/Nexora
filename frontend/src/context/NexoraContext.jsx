@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import axios from '../config/axios.js'
 import toast from 'react-hot-toast';
 
 const NexoraContext = createContext();
@@ -24,9 +24,8 @@ export const NexoraProvider = ({ children }) => {
 
   const checkUser = async () => {
     try {
-      const { data } = await axios.get('/api/auth/me', {
-        withCredentials: true
-      });
+      // Use the configured axios instance
+      const { data } = await axios.get('/api/auth/me');
 
       if (data.success) {
         let userData = data.user;
@@ -46,10 +45,10 @@ export const NexoraProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
+      // Use the configured axios instance
       const { data } = await axios.post(
         '/api/auth/login',
-        { email, password },
-        { withCredentials: true }
+        { email, password }
       );
 
       if (data.success) {
@@ -71,10 +70,12 @@ export const NexoraProvider = ({ children }) => {
 
   const register = async (username, email, password) => {
     try {
+      console.log('Attempting registration with:', { username, email }); // Debug log
+      
+      // ✅ Use the configured axios instance
       const { data } = await axios.post(
         '/api/auth/register',
-        { username, email, password },
-        { withCredentials: true }
+        { username, email, password }
       );
 
       if (data.success) {
@@ -88,12 +89,21 @@ export const NexoraProvider = ({ children }) => {
         return { success: true };
       }
     } catch (error) {
-      // More detailed error message
+      console.error('Registration error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        config: {
+          url: error.config?.url,
+          baseURL: error.config?.baseURL,
+          method: error.config?.method
+        }
+      });
+
       const message = error.response?.data?.message || 'Registration failed';
       const errors = error.response?.data?.errors;
 
       if (errors) {
-        // If there are multiple validation errors
         Object.values(errors).forEach(err => {
           toast.error(err);
         });
@@ -101,14 +111,13 @@ export const NexoraProvider = ({ children }) => {
         toast.error(message);
       }
 
-      console.error('Registration error details:', error.response?.data);
       return { success: false, error: message };
     }
   };
 
   const logout = async () => {
     try {
-      await axios.post('/api/auth/logout', {}, { withCredentials: true });
+      await axios.post('/api/auth/logout', {});
       setUser(null);
       setIsAuthenticated(false);
       toast.success('Logged out successfully');
