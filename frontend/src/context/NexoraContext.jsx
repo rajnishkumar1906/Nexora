@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import axios from '../utils/axios'; // Import our configured axios instance
+import axios from '../config/axios'; // Import our configured axios instance
 import toast from 'react-hot-toast';
 
 const NexoraContext = createContext();
