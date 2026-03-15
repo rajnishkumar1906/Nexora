@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { io } from 'socket.io-client';
 import { useNexora } from './NexoraContext';
 import toast from 'react-hot-toast';
@@ -15,115 +15,128 @@ export const useSocket = () => {
 
 export const SocketProvider = ({ children }) => {
   const { user, isAuthenticated } = useNexora();
-  const [socket, setSocket] = useState(null);
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [isConnected, setIsConnected] = useState(false);
   const socketRef = useRef(null);
-  const reconnectTimeoutRef = useRef(null);
+  const reconnectAttempts = useRef(0);
+  const maxReconnectAttempts = 10;
 
-  // Cleanup function
-  const cleanupSocket = useCallback(() => {
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-      reconnectTimeoutRef.current = null;
+  // Get socket URL based on environment
+  const getSocketURL = useCallback(() => {
+    // 1. Use VITE_SOCKET_URL if provided
+    if (import.meta.env.VITE_SOCKET_URL) {
+      return import.meta.env.VITE_SOCKET_URL;
     }
     
-    if (socketRef.current) {
-      console.log('🧹 Cleaning up socket connection');
-      socketRef.current.removeAllListeners();
-      socketRef.current.disconnect();
-      socketRef.current = null;
-      setSocket(null);
-      setIsConnected(false);
+    // 2. Use VITE_API_URL as fallback
+    if (import.meta.env.VITE_API_URL) {
+      return import.meta.env.VITE_API_URL;
     }
+    
+    // 3. In production with no env vars, use same origin
+    if (import.meta.env.PROD) {
+      return window.location.origin;
+    }
+    
+    // 4. Default for local development
+    return 'http://localhost:5000';
   }, []);
 
-  // Initialize socket connection
-  useEffect(() => {
-    if (!isAuthenticated || !user) {
-      cleanupSocket();
+  // Connect to socket
+  const connectSocket = useCallback(() => {
+    if (!isAuthenticated || !user || socketRef.current?.connected) {
       return;
     }
 
-    if (socketRef.current?.connected) {
-      console.log('✅ Socket already connected');
-      return;
+    const socketUrl = getSocketURL();
+    console.log('🔌 Connecting to socket at:', socketUrl);
+
+    // Disconnect existing socket if any
+    if (socketRef.current) {
+      socketRef.current.disconnect();
     }
 
-    // Environment-aware socket connection
-    // For Vercel (frontend) -> Render (backend) deployment:
-    // 1. Use VITE_API_URL if provided (recommended for Vercel)
-    // 2. Fallback to current origin (if served from same server)
-    // 3. Last fallback to localhost for development
-    const backendUrl = import.meta.env.VITE_API_URL || 
-                       (import.meta.env.PROD ? window.location.origin : 'http://localhost:5000');
-    
-    console.log('📡 Connecting to backend:', backendUrl);
-    
-    const newSocket = io(backendUrl, {
+    const newSocket = io(socketUrl, {
       withCredentials: true,
       transports: ['websocket', 'polling'],
       reconnection: true,
-      reconnectionAttempts: 10,
+      reconnectionAttempts: maxReconnectAttempts,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
       timeout: 20000,
-      path: '/socket.io',
       autoConnect: true,
       forceNew: true,
       query: {
         userId: user._id,
-        username: user.username
+        username: user.username,
+        timestamp: Date.now()
       }
     });
 
     socketRef.current = newSocket;
 
-    // Connection handlers
+    // Connection events
     newSocket.on('connect', () => {
-      console.log('✅ Socket connected directly to backend! ID:', newSocket.id);
+      console.log('✅ Socket connected! ID:', newSocket.id);
       setIsConnected(true);
+      reconnectAttempts.current = 0;
       
+      // Announce user presence
       newSocket.emit('user_connected', {
         userId: user._id,
         username: user.username,
         displayName: user.profile?.displayName || user.username
       });
 
-      toast.success('Connected to real-time server', {
+      toast.success('Connected to server', {
         id: 'socket-connect',
         duration: 2000
       });
     });
 
     newSocket.on('disconnect', (reason) => {
-      console.log('❌ Socket disconnected. Reason:', reason);
+      console.log('❌ Socket disconnected:', reason);
       setIsConnected(false);
+      
+      if (reason === 'io server disconnect') {
+        // Server disconnected - attempt to reconnect
+        setTimeout(() => connectSocket(), 1000);
+      }
     });
 
     newSocket.on('connect_error', (error) => {
       console.error('🔴 Socket connection error:', error.message);
       setIsConnected(false);
       
-      // Only show error after multiple attempts
-      if (!socketRef.current?.reconnecting) {
-        toast.error('Unable to connect to server. Retrying...', {
+      reconnectAttempts.current += 1;
+      
+      if (reconnectAttempts.current <= maxReconnectAttempts) {
+        console.log(`🔄 Reconnect attempt ${reconnectAttempts.current}/${maxReconnectAttempts}`);
+      } else {
+        toast.error('Unable to connect to server. Please refresh the page.', {
           id: 'socket-error',
-          duration: 3000
+          duration: 5000
         });
       }
     });
 
     newSocket.on('reconnect', (attemptNumber) => {
-      console.log('🔄 Socket reconnected after', attemptNumber, 'attempts');
+      console.log('🔄 Reconnected after', attemptNumber, 'attempts');
       setIsConnected(true);
       toast.success('Reconnected to server', {
         id: 'socket-reconnect',
         duration: 2000
       });
+      
+      // Re-announce presence after reconnect
+      newSocket.emit('user_connected', {
+        userId: user._id,
+        username: user.username,
+        displayName: user.profile?.displayName || user.username
+      });
     });
 
-    // Event handlers (keep all your existing event handlers)
+    // User status events
     newSocket.on('user_status_change', ({ userId, status }) => {
       setOnlineUsers(prev => {
         if (status === 'online') {
@@ -134,31 +147,21 @@ export const SocketProvider = ({ children }) => {
       });
     });
 
+    // Handle notifications
     newSocket.on('notification', (notification) => {
       toast.custom((t) => (
-        <div className="bg-white rounded-lg shadow-lg border border-primary-200 p-4 max-w-md">
-          <div className="flex items-start space-x-3">
+        <div className="bg-white rounded-lg shadow-lg p-4 max-w-md border-l-4 border-primary-500">
+          <div className="flex items-start gap-3">
             <img 
-              src={notification.sender?.profile?.avatar || `https://ui-avatars.com/api/?name=${notification.sender?.username || 'Nexora'}&background=0ea5e9&color=fff`} 
-              className="w-10 h-10 rounded-full object-cover" 
-              alt="sender"
+              src={notification.sender?.profile?.avatar || `https://ui-avatars.com/api/?name=${notification.sender?.username || 'N'}`}
+              className="w-10 h-10 rounded-full"
+              alt=""
             />
             <div className="flex-1">
-              <p className="font-bold text-primary-600">
-                {notification.sender?.profile?.displayName || notification.sender?.username || 'Nexora'}
+              <p className="font-bold text-gray-800">
+                {notification.sender?.profile?.displayName || notification.sender?.username}
               </p>
               <p className="text-sm text-gray-600 mt-1">{notification.content}</p>
-              {notification.type === 'game_invite' && (
-                <button 
-                  onClick={() => {
-                    toast.dismiss(t.id);
-                    window.location.href = `/game/${notification.data.sessionId}`;
-                  }}
-                  className="mt-2 bg-primary-600 text-white px-3 py-1 rounded-md text-xs font-bold hover:bg-primary-500 transition-colors"
-                >
-                  JOIN GAME
-                </button>
-              )}
             </div>
             <button 
               onClick={() => toast.dismiss(t.id)}
@@ -171,60 +174,25 @@ export const SocketProvider = ({ children }) => {
       ), { duration: 5000 });
     });
 
-    newSocket.on('new_dm_notification', ({ roomId, message }) => {
-      toast.custom((t) => (
-        <div className="bg-white rounded-lg shadow-lg border border-primary-200 p-4 max-w-md">
-          <p className="font-bold text-primary-600">New message from {message.author}</p>
-          <p className="text-sm text-gray-600 mt-1 truncate">{message.content}</p>
-          <div className="flex justify-end mt-2">
-            <button 
-              onClick={() => {
-                toast.dismiss(t.id);
-                window.location.href = `/chat/${roomId}`;
-              }}
-              className="bg-primary-600 text-white px-3 py-1 rounded-md text-xs font-bold hover:bg-primary-500"
-            >
-              OPEN CHAT
-            </button>
-          </div>
-        </div>
-      ), { duration: 4000 });
-    });
+    return newSocket;
+  }, [isAuthenticated, user, getSocketURL]);
 
-    newSocket.on('rematch_request', ({ sessionId, senderName }) => {
-      toast.custom((t) => (
-        <div className="bg-white rounded-lg shadow-lg border border-primary-200 p-4 max-w-md">
-          <p className="font-bold text-primary-600 mb-3">{senderName} wants a rematch!</p>
-          <div className="flex space-x-2">
-            <button 
-              onClick={() => { 
-                toast.dismiss(t.id);
-                window.location.href = `/game/${sessionId}`;
-              }} 
-              className="flex-1 bg-primary-600 text-white px-3 py-2 rounded-md text-xs font-bold hover:bg-primary-500"
-            >
-              ACCEPT
-            </button>
-            <button 
-              onClick={() => toast.dismiss(t.id)} 
-              className="flex-1 bg-primary-100 text-primary-700 px-3 py-2 rounded-md text-xs font-bold hover:bg-primary-200"
-            >
-              DECLINE
-            </button>
-          </div>
-        </div>
-      ), { duration: 8000 });
-    });
-
-    setSocket(newSocket);
+  // Initialize socket connection
+  useEffect(() => {
+    const socket = connectSocket();
 
     return () => {
-      cleanupSocket();
+      if (socketRef.current) {
+        console.log('🧹 Cleaning up socket connection');
+        socketRef.current.removeAllListeners();
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
     };
-  }, [isAuthenticated, user, cleanupSocket]);
+  }, [connectSocket]);
 
   const value = {
-    socket,
+    socket: socketRef.current,
     onlineUsers,
     isConnected
   };
@@ -235,5 +203,3 @@ export const SocketProvider = ({ children }) => {
     </SocketContext.Provider>
   );
 };
-
-export default SocketProvider;

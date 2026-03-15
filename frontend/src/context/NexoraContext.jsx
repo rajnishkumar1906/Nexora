@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import axios from '../config/axios.js'
+import axios from '../utils/axios'; // Import our configured axios instance
 import toast from 'react-hot-toast';
 
 const NexoraContext = createContext();
@@ -18,24 +18,29 @@ export const NexoraProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
 
+  // Check if user is logged in on mount
   useEffect(() => {
     checkUser();
   }, []);
 
   const checkUser = async () => {
     try {
-      // Use the configured axios instance
       const { data } = await axios.get('/api/auth/me');
-
-      if (data.success) {
+      
+      if (data.success && data.user) {
+        // Fix avatar if needed
         let userData = data.user;
-        if (userData.profile?.avatar?.includes('res.cloudinary.com/demo/image/upload/v1/')) {
+        if (userData.profile?.avatar?.includes('cloudinary.com/demo')) {
           userData.profile.avatar = `https://ui-avatars.com/api/?name=${userData.username}&background=8b5cf6&color=fff`;
         }
         setUser(userData);
         setIsAuthenticated(true);
       }
     } catch (error) {
+      // 401 is expected for unauthenticated users
+      if (error.response?.status !== 401) {
+        console.error('Check user error:', error);
+      }
       setUser(null);
       setIsAuthenticated(false);
     } finally {
@@ -43,19 +48,54 @@ export const NexoraProvider = ({ children }) => {
     }
   };
 
-  const login = async (email, password) => {
+  const register = async (username, email, password) => {
     try {
-      // Use the configured axios instance
-      const { data } = await axios.post(
-        '/api/auth/login',
-        { email, password }
-      );
+      const { data } = await axios.post('/api/auth/register', {
+        username,
+        email,
+        password
+      });
 
       if (data.success) {
         let userData = data.user;
-        if (userData.profile?.avatar?.includes('res.cloudinary.com/demo/image/upload/v1/')) {
+        // Fix avatar if needed
+        if (userData.profile?.avatar?.includes('cloudinary.com/demo')) {
           userData.profile.avatar = `https://ui-avatars.com/api/?name=${userData.username}&background=8b5cf6&color=fff`;
         }
+        
+        setUser(userData);
+        setIsAuthenticated(true);
+        toast.success(data.message || 'Registration successful!');
+        return { success: true };
+      }
+    } catch (error) {
+      const message = error.response?.data?.message || 'Registration failed';
+      const errors = error.response?.data?.errors;
+      
+      if (errors) {
+        errors.forEach(err => toast.error(err.msg || err));
+      } else {
+        toast.error(message);
+      }
+      
+      return { success: false, error: message };
+    }
+  };
+
+  const login = async (email, password) => {
+    try {
+      const { data } = await axios.post('/api/auth/login', {
+        email,
+        password
+      });
+
+      if (data.success) {
+        let userData = data.user;
+        // Fix avatar if needed
+        if (userData.profile?.avatar?.includes('cloudinary.com/demo')) {
+          userData.profile.avatar = `https://ui-avatars.com/api/?name=${userData.username}&background=8b5cf6&color=fff`;
+        }
+        
         setUser(userData);
         setIsAuthenticated(true);
         toast.success(data.message || 'Login successful!');
@@ -68,56 +108,9 @@ export const NexoraProvider = ({ children }) => {
     }
   };
 
-  const register = async (username, email, password) => {
-    try {
-      console.log('Attempting registration with:', { username, email }); // Debug log
-      
-      // ✅ Use the configured axios instance
-      const { data } = await axios.post(
-        '/api/auth/register',
-        { username, email, password }
-      );
-
-      if (data.success) {
-        let userData = data.user;
-        if (userData.profile?.avatar?.includes('res.cloudinary.com/demo/image/upload/v1/')) {
-          userData.profile.avatar = `https://ui-avatars.com/api/?name=${userData.username}&background=8b5cf6&color=fff`;
-        }
-        setUser(userData);
-        setIsAuthenticated(true);
-        toast.success(data.message || 'Registration successful!');
-        return { success: true };
-      }
-    } catch (error) {
-      console.error('Registration error details:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status,
-        config: {
-          url: error.config?.url,
-          baseURL: error.config?.baseURL,
-          method: error.config?.method
-        }
-      });
-
-      const message = error.response?.data?.message || 'Registration failed';
-      const errors = error.response?.data?.errors;
-
-      if (errors) {
-        Object.values(errors).forEach(err => {
-          toast.error(err);
-        });
-      } else {
-        toast.error(message);
-      }
-
-      return { success: false, error: message };
-    }
-  };
-
   const logout = async () => {
     try {
-      await axios.post('/api/auth/logout', {});
+      await axios.post('/api/auth/logout');
       setUser(null);
       setIsAuthenticated(false);
       toast.success('Logged out successfully');
@@ -126,21 +119,17 @@ export const NexoraProvider = ({ children }) => {
     }
   };
 
-  const toggleAuthMode = () => {
-    setIsLogin(!isLogin);
-  };
+  const toggleAuthMode = () => setIsLogin(!isLogin);
 
   const value = {
     user,
     loading,
     isAuthenticated,
     isLogin,
-    login,
     register,
+    login,
     logout,
-    toggleAuthMode,
-    setUser,
-    setIsAuthenticated
+    toggleAuthMode
   };
 
   return (

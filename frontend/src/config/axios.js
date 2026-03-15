@@ -1,23 +1,39 @@
 import axios from 'axios';
 
-// Environment-aware baseURL for axios
-// 1. VITE_API_URL (recommended for Vercel/Render separate domains)
-// 2. Empty string (relative path if served from the same server)
-// 3. Localhost (for development)
+// Smart baseURL that works in all environments
+const getBaseURL = () => {
+  // 1. If VITE_API_URL is set (production or custom), use it
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  
+  // 2. If in production but no VITE_API_URL, use relative path (same domain)
+  if (import.meta.env.PROD) {
+    return '';
+  }
+  
+  // 3. Default for local development
+  return 'http://localhost:5000';
+};
+
 const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:5000'),
-  withCredentials: true,
+  baseURL: getBaseURL(),
+  withCredentials: true, // Important for cookies
+  timeout: 30000, // 30 second timeout
   headers: {
     'Content-Type': 'application/json'
   }
 });
 
-// Add a request interceptor for debugging
+// Request Interceptor - Automatically adds token if needed
 axiosInstance.interceptors.request.use(
   (config) => {
+    // Log requests in development only
     if (import.meta.env.DEV) {
-      console.log(`Making ${config.method.toUpperCase()} request to: ${config.baseURL}${config.url}`);
+      console.log(`🌐 API Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
     }
+    
+    // You can add custom headers here if needed
     return config;
   },
   (error) => {
@@ -25,13 +41,38 @@ axiosInstance.interceptors.request.use(
   }
 );
 
-// Add a response interceptor for error handling
+// Response Interceptor - Global error handling
 axiosInstance.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.code === 'ERR_NETWORK' && import.meta.env.DEV) {
-      console.error('Network error - make sure the backend server is running on port 5000');
+  (response) => {
+    return response;
+  },
+  async (error) => {
+    const originalRequest = error.config;
+    
+    // Handle token refresh if needed (optional)
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      
+      try {
+        // Attempt to refresh token
+        await axiosInstance.post('/api/auth/refresh-token');
+        // Retry original request
+        return axiosInstance(originalRequest);
+      } catch (refreshError) {
+        // Refresh failed - redirect to login
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        }
+        return Promise.reject(refreshError);
+      }
     }
+    
+    // Network errors - backend might be down
+    if (error.code === 'ERR_NETWORK') {
+      console.error('Network error - backend server might be down');
+      // You can show a toast notification here
+    }
+    
     return Promise.reject(error);
   }
 );
